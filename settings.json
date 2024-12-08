@@ -1,0 +1,14 @@
+{
+    "data_file_path": "data.txt",
+    "script_path": "main.py",
+    "bot_type": "python",
+    "monitoring_folder": ".",
+    "inputs": [
+        "2\n",
+        "3\n",
+        "3\n",
+        "4\n",
+        "0\n"
+    ],
+    "restart_delay": 3
+}
