@@ -1,7 +1,9 @@
 import time
+import os
 import subprocess
 import json
-import shutil
+import sys
+from pathlib import Path
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
@@ -19,8 +21,8 @@ def load_config():
     except FileNotFoundError:
         print(f"File konfigurasi {config_path} tidak ditemukan. Pastikan file tersedia.")
         exit(1)
-    except json.JSONDecodeError as e:
-        print(f"Format file {config_path} tidak valid: {e}")
+    except json.JSONDecodeError:
+        print(f"Format file {config_path} tidak valid. Periksa isinya.")
         exit(1)
 
 # Proses bot yang sedang berjalan
@@ -39,20 +41,6 @@ class FolderWatcher(FileSystemEventHandler):
         if event.src_path == config["data_file_path"]:
             print(f"Perubahan terdeteksi pada file: {event.src_path}")
             restart_bot()
-
-def get_executable(command):
-    """Mendeteksi Python/Node.js di sistem."""
-    executable = shutil.which(command)
-    if not executable:
-        # Jika Python3 tidak ditemukan, coba Python
-        if command == 'python3':
-            executable = shutil.which('python')  # Fallback ke python
-        elif command == 'node':
-            executable = shutil.which('node')  # Fallback ke node.js
-    if not executable:
-        print(f"{command.capitalize()} tidak ditemukan. Pastikan {command} sudah diinstal.")
-        exit(1)
-    return executable
 
 def stop_bot():
     """Menghentikan proses bot jika masih aktif."""
@@ -82,38 +70,34 @@ def restart_bot():
     start_bot()
 
 def start_bot():
-    """Menjalankan skrip bot berdasarkan jenis yang dipilih."""
+    """Menjalankan skrip Python sebagai bot."""
     global current_process
     try:
-        # Tentukan perintah berdasarkan jenis bot
-        if config["bot_type"] == "python":
-            command = [get_executable('python3'), config["script_path"]]
-        elif config["bot_type"] == "node":
-            command = [get_executable('node'), config["script_path"]]
-        else:
-            print(f"Jenis bot tidak didukung: {config['bot_type']}")
-            return
-
-        # Jalankan proses bot
+        # Menyesuaikan perintah berdasarkan OS
+        python_command = "python3" if sys.platform != "win32" else "python"
+        
+        # Menjalankan main.py sebagai proses baru dengan input otomatis
         current_process = subprocess.Popen(
-            command,
-            stdin=subprocess.PIPE,
-            text=True
+            [python_command, config["python_script_path"]],
+            stdin=subprocess.PIPE,  # Mengatur stdin agar dapat mengirimkan input
+            text=True  # Memastikan input dalam format teks (bukan byte)
         )
 
         # Jeda sebelum menjawab pertanyaan
         print("Menunggu bot siap menerima input...")
-        time.sleep(2)
+        time.sleep(2)  # Jeda awal agar bot siap
 
         # Mengirimkan jawaban otomatis ke bot dengan jeda di antaranya
         for input_data in config["inputs"]:
-            current_process.stdin.write(input_data)
-            current_process.stdin.flush()
+            current_process.stdin.write(input_data)  # Kirim input ke proses
+            current_process.stdin.flush()  # Pastikan data langsung dikirimkan
             print(f"{input_data.strip()}")
-            time.sleep(1)
+            time.sleep(1)  # Jeda 0.5 detik di antara jawaban
 
         current_process.stdin.close()  # Tutup input setelah selesai menulis
         print("Skrip bot berhasil dijalankan.")
+    except FileNotFoundError:
+        print("Python3 tidak ditemukan. Pastikan Python3 sudah terinstal.")
     except Exception as e:
         print(f"Terjadi kesalahan: {e}")
 
@@ -121,6 +105,7 @@ def start_monitoring():
     """Mulai memantau folder."""
     event_handler = FolderWatcher()
     observer = Observer()
+    # Memantau folder berdasarkan konfigurasi
     observer.schedule(event_handler, path=config["monitoring_folder"], recursive=False)
     observer.start()
     try:
