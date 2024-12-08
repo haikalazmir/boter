@@ -109,7 +109,7 @@ def start_bot():
         for input_data in config["inputs"]:
             current_process.stdin.write(input_data)
             current_process.stdin.flush()
-            print(f"Jawaban dikirim: {input_data.strip()}")
+            print(f"{input_data.strip()}")
             time.sleep(1)
 
         current_process.stdin.close()  # Tutup input setelah selesai menulis
