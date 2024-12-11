@@ -2,8 +2,7 @@ import time
 import os
 import subprocess
 import json
-import sys
-from pathlib import Path
+import sys  # Menambahkan import sys
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
@@ -70,29 +69,33 @@ def restart_bot():
     start_bot()
 
 def start_bot():
-    """Menjalankan skrip Python sebagai bot."""
+    """Menjalankan skrip Python sebagai bot, mengirimkan input otomatis jika diatur."""
     global current_process
     try:
         # Menyesuaikan perintah berdasarkan OS
         python_command = "python3" if sys.platform != "win32" else "python"
         
-        # Menjalankan main.py sebagai proses baru dengan input otomatis
+        # Menjalankan main.py sebagai proses baru
         current_process = subprocess.Popen(
             [python_command, config["python_script_path"]],
             stdin=subprocess.PIPE,  # Mengatur stdin agar dapat mengirimkan input
             text=True  # Memastikan input dalam format teks (bukan byte)
         )
 
-        # Jeda sebelum menjawab pertanyaan
+        # Jeda sebelum bot siap
         print("Menunggu bot siap menerima input...")
         time.sleep(2)  # Jeda awal agar bot siap
 
-        # Mengirimkan jawaban otomatis ke bot dengan jeda di antaranya
-        for input_data in config["inputs"]:
-            current_process.stdin.write(input_data)  # Kirim input ke proses
-            current_process.stdin.flush()  # Pastikan data langsung dikirimkan
-            print(f"{input_data.strip()}")
-            time.sleep(1)  # Jeda 0.5 detik di antara jawaban
+        # Pengecekan apakah input otomatis diaktifkan
+        if config.get("send_auto_input", "no").lower() == "yes":
+            # Mengirimkan jawaban otomatis ke bot dengan jeda di antaranya
+            for input_data in config["inputs"]:
+                current_process.stdin.write(input_data)  # Kirim input ke proses
+                current_process.stdin.flush()  # Pastikan data langsung dikirimkan
+                print(f"Jawaban dikirim: {input_data.strip()}")
+                time.sleep(0.5)  # Jeda 0.5 detik di antara jawaban
+        else:
+            print("Input otomatis tidak dikirimkan berdasarkan pengaturan.")
 
         current_process.stdin.close()  # Tutup input setelah selesai menulis
         print("Skrip bot berhasil dijalankan.")

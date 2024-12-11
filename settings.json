@@ -4,10 +4,9 @@
   "python_script_path": "main.py",
   "restart_delay": 3,
   "inputs": [
-    "2\n",
-    "3\n",
-    "3\n",
-    "4\n",
-    "0\n"
-  ]
+    "input1\n",
+    "input2\n",
+    "input3\n"
+  ],
+  "send_auto_input": "no"
 }
